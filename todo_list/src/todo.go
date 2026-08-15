@@ -3,60 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 type Todo struct {
 	ID          int
 	Description string
 	Done        bool
-}
-
-func main() {
-
-	db := initDB()
-	defer db.Close()
-
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Hello World!")
-
-	for {
-		fmt.Print("コマンド入力:")
-		var command string
-		fmt.Scanln(&command)
-
-		switch command {
-		case "/list":
-			renderTodoList(db)
-		case "/add":
-			addTodo(db)
-		case "/delete":
-			deleteTodo(db)
-		case "/toggle":
-			toggleTodoStatus(db)
-		case "/exit":
-			fmt.Println("終了します。")
-			return
-		case "/help":
-			renderHelp()
-		default:
-			fmt.Println("無効なコマンドです。")
-			renderHelp()
-		}
-	}
-}
-
-func initDB() *sql.DB {
-	db, err := sql.Open("mysql", "todo:todo@tcp(127.0.0.1:3306)/todo")
-	if err != nil {
-		panic(err)
-	}
-
-	return db
 }
 
 // コマンドの説明を表示
@@ -111,10 +63,10 @@ func deleteTodo(db *sql.DB) {
 }
 
 // Todo一覧を表示
-func renderTodoList(db *sql.DB) {
+func renderTodoList(repository *TodoRepository) {
 	fmt.Println("Todo一覧")
 
-	todos, err := fetchTodosFromDB(db)
+	todos, err := repository.FindAll()
 
 	if err != nil {
 		fmt.Println("Todoの取得に失敗しました:", err)
@@ -130,41 +82,6 @@ func renderTodoList(db *sql.DB) {
 		}
 		fmt.Printf("| %d | %s | %s |\n", todo.ID, todo.Description, status)
 	}
-}
-
-func fetchTodosFromDB(db *sql.DB) ([]Todo, error) {
-	rows, err := db.Query(`
-		SELECT id, description, done
-		FROM todos
-		ORDER BY id ASC
-	`)
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var todos []Todo
-
-	for rows.Next() {
-		var todo Todo
-
-		err := rows.Scan(
-			&todo.ID,
-			&todo.Description,
-			&todo.Done,
-		)
-		if err != nil {
-			return nil, err
-		}
-		todos = append(todos, todo)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return todos, nil
 }
 
 func toggleTodoStatus(db *sql.DB) {
