@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -15,34 +16,11 @@ func main() {
 	if err := db.Ping(); err != nil {
 		panic(err)
 	}
-
 	repository := &TodoRepository{db: db}
-
-	fmt.Println("Hello World!")
-
-	for {
-		fmt.Print("コマンド入力:")
-		var command string
-		fmt.Scanln(&command)
-
-		switch command {
-		case "/list":
-			commandList(repository)
-		case "/add":
-			commandAdd(repository)
-		case "/delete":
-			commandDelete(repository)
-		case "/toggle":
-			commandToggle(repository)
-		case "/exit":
-			fmt.Println("終了します。")
-			return
-		case "/help":
-			commandHelp()
-		default:
-			fmt.Println("無効なコマンドです。")
-			commandHelp()
-		}
+	p := tea.NewProgram(initialModel(repository))
+	if _, err := p.Run(); err != nil {
+		fmt.Println("エラー:", err)
+		return
 	}
 }
 

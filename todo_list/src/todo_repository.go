@@ -2,10 +2,37 @@ package main
 
 import (
 	"database/sql"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type TodoRepository struct {
 	db *sql.DB
+}
+
+func LoadTodos(repository *TodoRepository) tea.Cmd {
+	return func() tea.Msg {
+		todos, err := repository.FindAll()
+		return TodosLoadedMsg{
+			todos: todos,
+			err:   err,
+		}
+	}
+}
+
+type TodoUpdateMsg struct {
+	todo Todo
+	err  error
+}
+
+func updateTodo(repository *TodoRepository, todo Todo) tea.Cmd {
+	return func() tea.Msg {
+		err := repository.Update(todo)
+		return TodoUpdateMsg{
+			todo: todo,
+			err:  err,
+		}
+	}
 }
 
 func (r *TodoRepository) FindAll() ([]Todo, error) {
