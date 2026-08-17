@@ -53,6 +53,7 @@ func (r *TodoRepository) FindByID(id int) (Todo, error) {
 	if err != nil {
 		return Todo{}, err
 	}
+
 	return todo, nil
 }
 
