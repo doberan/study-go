@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -22,14 +23,14 @@ func renderHelp() {
 	fmt.Println("/help - コマンドの説明を表示")
 }
 
-func addTodo(db *sql.DB) {
+func addTodo(repository *TodoRepository) {
 	var description string
 	fmt.Print("Todoの説明を入力してください:")
 	fmt.Scanln(&description)
 
 	newTodo := Todo{Description: description, Done: false}
-	_, err := db.Exec(`INSERT INTO todos (description, done) VALUES (?, ?)`,
-		newTodo.Description, newTodo.Done)
+
+	err := repository.Create(newTodo)
 	if err != nil {
 		fmt.Println("Todoの追加に失敗しました:", err)
 		return
@@ -37,26 +38,19 @@ func addTodo(db *sql.DB) {
 	fmt.Println("Todoを追加しました。")
 }
 
-func deleteTodo(db *sql.DB) {
+func deleteTodo(repository *TodoRepository) {
 	var id int
 	fmt.Print("削除するTodoのID:")
 	fmt.Scanln(&id)
-	result, err := db.Exec(`DELETE FROM todos WHERE id = ?`, id)
 
-	if err != nil {
-		fmt.Println("Todoの削除に失敗しました:", err)
+	err := repository.Delete(id)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		fmt.Println("指定したTodoは存在しません")
 		return
 	}
-
-	rowsAffected, err := result.RowsAffected()
-
 	if err != nil {
 		fmt.Println("Todoの削除に失敗しました:", err)
-		return
-	}
-
-	if rowsAffected == 0 {
-		fmt.Println("指定されたIDのTodoは存在しません。")
 		return
 	}
 	fmt.Println("Todoを削除しました。")
@@ -72,6 +66,10 @@ func renderTodoList(repository *TodoRepository) {
 		fmt.Println("Todoの取得に失敗しました:", err)
 		return
 	}
+	if len(todos) == 0 {
+		fmt.Println("Todoは存在しません")
+		return
+	}
 
 	for _, todo := range todos {
 		var status string
@@ -84,41 +82,38 @@ func renderTodoList(repository *TodoRepository) {
 	}
 }
 
-func toggleTodoStatus(db *sql.DB) {
+func toggleTodoStatus(repository *TodoRepository) {
 	var id int
 	fmt.Print("ステータスを変更するTodoのID:")
 	fmt.Scanln(&id)
 
-	result, err := db.Exec(`UPDATE todos SET done = NOT done WHERE id = ?`, id)
-
-	if err != nil {
-		fmt.Println("Todoのステータス変更に失敗しました:", err)
+	todo, findErr := repository.FindByID(id)
+	if errors.Is(findErr, sql.ErrNoRows) {
+		fmt.Println("指定されたTodoは存在しません")
+		return
+	}
+	if findErr != nil {
+		fmt.Println("Todoの取得に失敗しました:", findErr)
 		return
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	todo.Done = !todo.Done
 
-	if err != nil {
-		fmt.Println("Todoのステータス変更に失敗しました:", err)
+	updateErr := repository.Update(todo)
+	if errors.Is(updateErr, sql.ErrNoRows) {
+		fmt.Println("指定されたTodoは存在しません")
+		return
+	}
+	if updateErr != nil {
+		fmt.Println("Todoの更新に失敗しました:", updateErr)
 		return
 	}
 
-	if rowsAffected == 0 {
-		fmt.Println("指定されたIDのTodoは存在しません。")
-		return
-	}
-
-	var done bool
-	err = db.QueryRow(`SELECT done FROM todos WHERE id = ?`, id).Scan(&done)
-
-	if err != nil {
-		fmt.Println("Todoのステータス取得に失敗しました:", err)
-		return
-	}
-
-	if done {
-		fmt.Println("Todoのステータスを完了に変更しました。")
+	var status string
+	if todo.Done {
+		status = "完了"
 	} else {
-		fmt.Println("Todoのステータスを未完了に変更しました。")
+		status = "未完了"
 	}
+	fmt.Printf("Todoのステータスを%sに更新しました。\n", status)
 }

@@ -27,11 +27,11 @@ func main() {
 		case "/list":
 			renderTodoList(repository)
 		case "/add":
-			addTodo(db)
+			addTodo(repository)
 		case "/delete":
-			deleteTodo(db)
+			deleteTodo(repository)
 		case "/toggle":
-			toggleTodoStatus(db)
+			toggleTodoStatus(repository)
 		case "/exit":
 			fmt.Println("終了します。")
 			return
