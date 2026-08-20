@@ -1,16 +1,29 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+)
+
+type screen int
+
+const (
+	screenList screen = iota
+	screenAdd
+	screenDelete
+	screenEdit
 )
 
 type model struct {
 	repository *TodoRepository
-	todos      []Todo // 表示するTodo一覧
-	cursor     int    // 現在選択しているTodoの位置
-	err        error
+
+	todoList list.Model // 表示するTodo一覧
+
+	err error
+
+	screen    screen
+	textInput textinput.Model
 }
 
 type TodosLoadedMsg struct {
@@ -18,80 +31,107 @@ type TodosLoadedMsg struct {
 	err   error
 }
 
+func LoadTodos(repository *TodoRepository) tea.Cmd {
+	return func() tea.Msg {
+		todos, err := repository.FindAll()
+
+		return TodosLoadedMsg{
+			todos: todos,
+			err:   err,
+		}
+	}
+}
+
+type TodoUpdateMsg struct {
+	todo Todo
+	err  error
+}
+
+func updateTodo(repository *TodoRepository, todo Todo) tea.Cmd {
+	return func() tea.Msg {
+		err := repository.Update(todo)
+		return TodoUpdateMsg{
+			todo: todo,
+			err:  err,
+		}
+	}
+}
+
+type TodoCreateMsg struct {
+	todo Todo
+	err  error
+}
+
+func createTodo(repository *TodoRepository, description string) tea.Cmd {
+	return func() tea.Msg {
+		todo := Todo{
+			Description: description,
+			Done:        false,
+		}
+		err := repository.Create(&todo)
+
+		return TodoCreateMsg{
+			todo: todo,
+			err:  err,
+		}
+	}
+}
+
+type TodoDeleteMsg struct {
+	id  int
+	err error
+}
+
+func deleteTodo(repository *TodoRepository, id int) tea.Cmd {
+	return func() tea.Msg {
+		err := repository.Delete(id)
+		return TodoDeleteMsg{
+			id:  id,
+			err: err,
+		}
+	}
+}
+
 func initialModel(repository *TodoRepository) model {
+	ti := textinput.New()
+	ti.Placeholder = "Todoの説明を入力してください"
+
+	items := []list.Item{
+		todoItem{
+			todo: Todo{
+				ID:          1,
+				Description: "Goを勉強する",
+				Done:        false,
+			},
+		},
+		todoItem{
+			todo: Todo{
+				ID:          2,
+				Description: "Bubble Teaを学ぶ",
+				Done:        true,
+			},
+		},
+		todoItem{
+			todo: Todo{
+				ID:          3,
+				Description: "寝る",
+				Done:        false,
+			},
+		},
+	}
+
+	todoList := list.New(items, todoDelegate{}, 50, 10)
+	todoList.Title = "Todo List"
 
 	return model{
 		repository: repository,
-		todos: []Todo{
-			{ID: 1, Description: "Goを勉強する", Done: false},
-			{ID: 2, Description: "Bubble Teaを学ぶ", Done: false},
-			{ID: 3, Description: "Bubble Teaを作る", Done: false},
-			{ID: 3, Description: "Bubble Teaを作る", Done: false},
-			{ID: 3, Description: "寝る", Done: true},
-		},
-		cursor: 0,
-		err:    nil,
+		todoList:   todoList,
+		err:        nil,
+		screen:     screenList,
+		textInput:  ti,
 	}
 }
 
 func (m model) Init() tea.Cmd {
 	return LoadTodos(m.repository)
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case TodosLoadedMsg:
-		if msg.err != nil {
-			m.err = msg.err
-			return m, nil
-		}
-		m.todos = msg.todos
-		return m, nil
-	case TodoUpdateMsg:
-		if msg.err != nil {
-			m.err = msg.err
-			return m, nil
-		}
-		m.todos[m.cursor] = msg.todo
-		return m, nil
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
-			return m, tea.Quit
-		case "up":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down":
-			if m.cursor < len(m.todos)-1 {
-				m.cursor++
-			}
-		case "enter":
-			todo := m.todos[m.cursor]
-			todo.Done = !todo.Done
-			return m, updateTodo(m.repository, todo)
-		}
-
-	}
-	return m, nil
-}
-
-func (m model) View() string {
-	s := "Todo List \n\n"
-
-	for i, todo := range m.todos {
-		cursor := " "
-		if m.cursor == i {
-			cursor = ">"
-		}
-
-		status := "□"
-		if todo.Done {
-			status = "☒"
-		}
-
-		s += fmt.Sprintf("%s %s %s\n", cursor, status, todo.Description)
-	}
-	s += "\n↑↓: 移動	Enter: 完了/未完了	q: 終了\n"
-	return s
 }

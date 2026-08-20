@@ -2,37 +2,10 @@ package main
 
 import (
 	"database/sql"
-
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type TodoRepository struct {
 	db *sql.DB
-}
-
-func LoadTodos(repository *TodoRepository) tea.Cmd {
-	return func() tea.Msg {
-		todos, err := repository.FindAll()
-		return TodosLoadedMsg{
-			todos: todos,
-			err:   err,
-		}
-	}
-}
-
-type TodoUpdateMsg struct {
-	todo Todo
-	err  error
-}
-
-func updateTodo(repository *TodoRepository, todo Todo) tea.Cmd {
-	return func() tea.Msg {
-		err := repository.Update(todo)
-		return TodoUpdateMsg{
-			todo: todo,
-			err:  err,
-		}
-	}
 }
 
 func (r *TodoRepository) FindAll() ([]Todo, error) {
@@ -84,12 +57,19 @@ func (r *TodoRepository) FindByID(id int) (Todo, error) {
 	return todo, nil
 }
 
-func (r *TodoRepository) Create(todo Todo) error {
-	_, err := r.db.Exec(`INSERT INTO todos (description, done) VALUES (?, ?)`,
+func (r *TodoRepository) Create(todo *Todo) error {
+	result, err := r.db.Exec(`INSERT INTO todos (description, done) VALUES (?, ?)`,
 		todo.Description, todo.Done)
 	if err != nil {
 		return err
 	}
+
+	lastID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	todo.ID = int(lastID)
+
 	return nil
 }
 
