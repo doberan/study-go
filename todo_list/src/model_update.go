@@ -7,8 +7,6 @@ import (
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.todoList, cmd = m.todoList.Update(msg)
-
 	switch msg := msg.(type) {
 	case TodosLoadedMsg:
 		if msg.err != nil {
@@ -67,12 +65,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.todoList.SetItems(items)
+
+		if len(items) > 0 && m.todoList.Cursor() >= len(items) {
+			m.todoList.Select(len(items) - 1)
+		}
+
 		m.screen = screenList
 		return m, nil
 	case tea.KeyMsg:
 		switch m.screen {
 		case screenList:
-			return m.updateListScreen(msg)
+			return m.updateListScreen(msg, cmd)
 		case screenAdd:
 			return m.updateAddScreen(msg)
 		case screenEdit:
@@ -84,7 +87,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) updateListScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) updateListScreen(msg tea.KeyMsg, cmd tea.Cmd) (tea.Model, tea.Cmd) {
+	m.todoList, cmd = m.todoList.Update(msg)
+
 	switch msg.String() {
 	case "q":
 		return m, tea.Quit
@@ -130,6 +135,10 @@ func (m model) updateEditScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "enter":
 		description := m.textInput.Value()
+
+		if description == "" {
+			return m, nil
+		}
 
 		todo := m.todoList.Items()[m.todoList.Cursor()].(todoItem).todo
 		todo.Description = description

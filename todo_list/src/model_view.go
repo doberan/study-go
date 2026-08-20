@@ -30,7 +30,12 @@ func (m model) viewAdd() string {
 }
 
 func (m model) viewList() string {
-	return m.todoList.View()
+	s := m.todoList.View()
+
+	s += "\n"
+	s += "↑↓/jk: 移動  Space: 完了/未完了  a: 追加  e: 編集  d: 削除  q: 終了\n"
+
+	return s
 }
 
 func (m model) viewDelete() string {

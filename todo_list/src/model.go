@@ -96,32 +96,11 @@ func initialModel(repository *TodoRepository) model {
 	ti := textinput.New()
 	ti.Placeholder = "Todoの説明を入力してください"
 
-	items := []list.Item{
-		todoItem{
-			todo: Todo{
-				ID:          1,
-				Description: "Goを勉強する",
-				Done:        false,
-			},
-		},
-		todoItem{
-			todo: Todo{
-				ID:          2,
-				Description: "Bubble Teaを学ぶ",
-				Done:        true,
-			},
-		},
-		todoItem{
-			todo: Todo{
-				ID:          3,
-				Description: "寝る",
-				Done:        false,
-			},
-		},
-	}
+	items := []list.Item{}
 
 	todoList := list.New(items, todoDelegate{}, 50, 10)
 	todoList.Title = "Todo List"
+	todoList.SetShowHelp(false)
 
 	return model{
 		repository: repository,
