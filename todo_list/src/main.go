@@ -14,8 +14,9 @@ func main() {
 	if err := db.Ping(); err != nil {
 		panic(err)
 	}
-	repository := &TodoRepository{db: db}
-	p := tea.NewProgram(initialModel(repository))
+	repository := &MySQLTodoRepository{db: db}
+	service := NewTodoService(repository)
+	p := tea.NewProgram(NewModel(service))
 	if _, err := p.Run(); err != nil {
 		fmt.Println("エラー:", err)
 		return

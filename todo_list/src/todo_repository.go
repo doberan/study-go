@@ -4,11 +4,19 @@ import (
 	"database/sql"
 )
 
-type TodoRepository struct {
+type TodoRepository interface {
+	FindAll() ([]Todo, error)
+	FindByID(id int) (Todo, error)
+	Create(todo *Todo) error
+	Delete(id int) error
+	Update(todo Todo) error
+}
+
+type MySQLTodoRepository struct {
 	db *sql.DB
 }
 
-func (r *TodoRepository) FindAll() ([]Todo, error) {
+func (r *MySQLTodoRepository) FindAll() ([]Todo, error) {
 	rows, err := r.db.Query(`
 		SELECT id, description, done
 		FROM todos
@@ -43,7 +51,7 @@ func (r *TodoRepository) FindAll() ([]Todo, error) {
 	return todos, nil
 }
 
-func (r *TodoRepository) FindByID(id int) (Todo, error) {
+func (r *MySQLTodoRepository) FindByID(id int) (Todo, error) {
 	var todo Todo
 	err := r.db.QueryRow(`SELECT id, description, done FROM todos WHERE id = ?`, id).Scan(
 		&todo.ID,
@@ -57,7 +65,7 @@ func (r *TodoRepository) FindByID(id int) (Todo, error) {
 	return todo, nil
 }
 
-func (r *TodoRepository) Create(todo *Todo) error {
+func (r *MySQLTodoRepository) Create(todo *Todo) error {
 	result, err := r.db.Exec(`INSERT INTO todos (description, done) VALUES (?, ?)`,
 		todo.Description, todo.Done)
 	if err != nil {
@@ -73,7 +81,7 @@ func (r *TodoRepository) Create(todo *Todo) error {
 	return nil
 }
 
-func (r *TodoRepository) Delete(id int) error {
+func (r *MySQLTodoRepository) Delete(id int) error {
 	result, err := r.db.Exec(`DELETE FROM todos WHERE id = ?`, id)
 	if err != nil {
 		return err
@@ -88,7 +96,7 @@ func (r *TodoRepository) Delete(id int) error {
 	return nil
 }
 
-func (r *TodoRepository) Update(todo Todo) error {
+func (r *MySQLTodoRepository) Update(todo Todo) error {
 	result, err := r.db.Exec(`UPDATE todos SET description = ?, done = ? WHERE id = ?`, todo.Description, todo.Done, todo.ID)
 	if err != nil {
 		return err
