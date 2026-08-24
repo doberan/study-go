@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -6,17 +6,19 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+
+	"todo_list/internal/domain"
 )
 
 type todoItem struct {
-	todo Todo
+	todo domain.Todo
 }
 
 func (i todoItem) FilterValue() string {
 	return i.todo.Description
 }
 
-func newTodoItems(todos []Todo) []list.Item {
+func newTodoItems(todos []domain.Todo) []list.Item {
 	items := make([]list.Item, 0, len(todos))
 
 	for _, todo := range todos {

@@ -1,4 +1,4 @@
-package main
+package domain
 
 import (
 	"database/sql"
@@ -14,6 +14,10 @@ type TodoRepository interface {
 
 type MySQLTodoRepository struct {
 	db *sql.DB
+}
+
+func NewMySQLTodoRepository(db *sql.DB) *MySQLTodoRepository {
+	return &MySQLTodoRepository{db: db}
 }
 
 func (r *MySQLTodoRepository) FindAll() ([]Todo, error) {
