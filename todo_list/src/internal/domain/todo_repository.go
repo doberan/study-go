@@ -75,7 +75,6 @@ func (r *MySQLTodoRepository) Create(todo *Todo) error {
 	if err != nil {
 		return err
 	}
-
 	lastID, err := result.LastInsertId()
 	if err != nil {
 		return err

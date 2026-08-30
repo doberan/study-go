@@ -26,6 +26,9 @@ type model struct {
 
 	screen    screen
 	textInput textinput.Model
+
+	width  int
+	height int
 }
 
 func (m model) Init() tea.Cmd {

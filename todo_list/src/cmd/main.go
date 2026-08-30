@@ -21,7 +21,10 @@ func main() {
 	}
 	repository := domain.NewMySQLTodoRepository(db)
 	service := usecase.NewTodoService(repository)
-	p := tea.NewProgram(ui.NewModel(service))
+	p := tea.NewProgram(
+		ui.NewModel(service),
+		tea.WithAltScreen(),
+	)
 	if _, err := p.Run(); err != nil {
 		fmt.Println("エラー:", err)
 		return

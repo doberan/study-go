@@ -57,7 +57,7 @@ func (d todoDelegate) Render(w io.Writer, m list.Model, index int, item list.Ite
 		status = "☒"
 	}
 
-	fmt.Fprintf(w, "%s %s %s", cursor, status, todo.todo.Description)
+	fmt.Fprintf(w, "%s %s | %s", cursor, status, todo.todo.Description)
 }
 
 var _ list.Item = todoItem{}

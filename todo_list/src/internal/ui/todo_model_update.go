@@ -137,6 +137,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.screen = screenList
 		return m, nil
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.todoList.SetWidth(m.width)
+		return m, nil
 	case tea.KeyMsg:
 		switch m.screen {
 		case screenList:
